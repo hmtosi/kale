@@ -107,10 +107,10 @@ Checkout to backend directory. Then:
 cd backend/
 pip install -e .[dev]
 
-#start kfp locally in another terminal (optional)
+# start kfp locally in another terminal
 kubectl port-forward -n kubeflow svc/ml-pipeline-ui 8080:80
 
-#run cli from outside the backend directory
+# run cli from outside the backend directory
 cd ..
 python ./backend/kale/cli.py --nb ./examples/base/candies_sharing.ipynb --kfp_host http://127.0.0.1:8080 --run_pipeline
 
@@ -153,6 +153,8 @@ jupyter labextension develop . --overwrite
 # list installed jp extensions
 jlpm labextension list
 
+# move to the base directory location
+cd ..
 # open jupyterlab
 jupyter lab
 
@@ -162,6 +164,7 @@ jlpm build
 
 # copy paste static directory files inside kubeflow-kale-labextension/labextension folder and refresh jupyterlab
 ```
+Now, you can test the extension with the notebooks inside the examples directory.
 
 #### Git Hooks
 
