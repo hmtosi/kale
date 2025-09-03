@@ -65,7 +65,7 @@ jupyter labextension list
 jupyter lab
 ```
 
-<img alt="Kale JupyterLab Extension" src="https://raw.githubusercontent.com/kubeflow-kale/kale/master/docs/imgs/labextension.png"/>
+<img alt="Kale JupyterLab Extension" src="docs/imgs/Extension.png"/>
 
 To build images to be used as a NotebookServer in Kubeflow, refer to the
 Dockerfile in the `docker` folder.
