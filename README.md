@@ -26,7 +26,8 @@
 > 
 > See all details in the [**Road to 2.0 issue**](https://github.com/kubeflow-kale/kale/issues/457)
 
-## Introduction
+
+
 
 KALE (Kubeflow Automated pipeLines Engine) is a project that aims at simplifying
 the Data Science experience of deploying Kubeflow Pipelines workflows.
@@ -49,38 +50,32 @@ single line of code.
 Read more about Kale and how it works in this Medium post:
 [Automating Jupyter Notebook Deployments to Kubeflow Pipelines with Kale](https://medium.com/kubeflow/automating-jupyter-notebook-deployments-to-kubeflow-pipelines-with-kale-a4ede38bea1f)
 
-## Resources
-
-- Kale introduction [blog post](https://medium.com/kubeflow/automating-jupyter-notebook-deployments-to-kubeflow-pipelines-with-kale-a4ede38bea1f)
-- Codelabs showcasing Kale working in MiniKF with Arrikto's [Rok](https://www.arrikto.com/):
-  - [From Notebook to Kubeflow Pipelines](https://codelabs.developers.google.com/codelabs/cloud-kubeflow-minikf-kale/#0)
-  - [From Notebook to Kubeflow Pipelines with HP Tuning](https://arrik.to/demowfhp)
-- KubeCon NA Tutorial 2019: [From Notebook to Kubeflow Pipelines: An End-to-End Data Science Workflow](https://kccncna19.sched.com/event/Uaeq/tutorial-from-notebook-to-kubeflow-pipelines-an-end-to-end-data-science-workflow-michelle-casbon-google-stefano-fioravanzo-fondazione-bruno-kessler-ilias-katsakioris-arrikto?iframe=no&w=100%&sidebar=yes&bg=no)
-  / [video](http://youtube.com/watch?v=C9rJzTzVzvQ)
-- CNCF Webinar 2020: [From Notebook to Kubeflow Pipelines with MiniKF & Kale](https://www.cncf.io/webinars/from-notebook-to-kubeflow-pipelines-with-minikf-kale/)
-  / [video](https://www.youtube.com/watch?v=1fX9ZFWkvvs)
-- KubeCon EU Tutorial 2020: [From Notebook to Kubeflow Pipelines with HP Tuning: A Data Science Journey](https://kccnceu20.sched.com/event/ZerG/tutorial-from-notebook-to-kubeflow-pipelines-with-hp-tuning-a-data-science-journey-stefano-fioravanzo-ilias-katsakioris-arrikto)
-  / [video](https://www.youtube.com/watch?v=QK0NxhyADpM)
-
 ## Getting started
 
 ### Requirements
+
 - Install a Kubernetes cluster (basic Kubernetes cluster, `minikube`, `kind`)
 - Install Kubeflow Pipelines(v2.4.0) as recommended in the official documentation [Kubeflow Pipelines Installation](https://www.kubeflow.org/docs/components/pipelines/operator-guides/installation/)
 
 ### Installation
+
 Clone the repository:
+
 ```bash
 git clone https://github.com/kubeflow-kale/kale.git
 ```
+
 To follow the best practices for coding, create a virtual environment to hold your installation. There are a couple of methods for this.
 `conda`:
+
 ```bash
 cd kale
 conda create --name my_project_env python=3.10
 conda activate my_project_env
 ```
+
 `venv`:
+
 ```bash
 cd kale
 python -m venv .venv
@@ -88,6 +83,7 @@ source .venv/bin/activate
 ```
 
 Install JupyterLab into your virtual environment. Then install the Kale backend from PyPI and the JupyterLab extension.
+
 ```bash
 # activate your virtual environment if you haven't already
 conda activate my_project_env
@@ -110,7 +106,9 @@ jupyter lab
 ```
 
 ### Verify backend installation
+
 First, ensure that your `kfp` installation is running. Open a new terminal window and run the following:
+
 ```bash
 # start your cluster if you haven't already - this example uses minikube
 minikube start
@@ -121,11 +119,13 @@ kubectl get pods -n kubeflow
 # start kfp on localhost
 kubectl port-forward -n kubeflow svc/ml-pipeline-ui 8080:80
 ```
+
 Now, when you navigate to the `localhost` url, you should see the KFP UI running with two example pipeline tutorials loaded and ready.
 (If the pipelines do not appear, and there is a blue circle "wait" symbol instead, you will need to review the steps for setting up K8s and installing `kfp`.)
 
 Once you have confirmed that the `kfp` install is working as expected, verify that the kale backend has connected to it.
 Open a new terminal window and run the following:
+
 ```bash
 # navigate to the kale/ directory
 cd ..
@@ -141,14 +141,15 @@ python ./backend/kale/cli.py --nb ./examples/base/candies_sharing.ipynb --kfp_ho
 # (you can try running the following test, but it is in development and will fail)
 pytest -x -vv # TODO
 ```
+
 The `run-pipeline` command should generate a DSL script in the `root/.kale` directory and create and run a new pipeline called `kale-pipeline`.
 Refresh the `kfp` UI browser - you should now see this pipeline.
 
 ### Verify frontend installation
 
-Navigate to the JupyterLab window that was opened by the `install` steps. You should see JupyterLab with the Kale icon in the left hand panel. 
+Navigate to the JupyterLab window that was opened by the `install` steps. You should see JupyterLab with the Kale icon in the left hand panel.
 (You may want to stop and restart the JupyterLab session from the terminal to make sure it is updated with your backend changes from the previous step.)
-Click on the Kale icon to open the Kale Deployment Panel - you will only see the title of the panel, and you will not see any of the controls. 
+Click on the Kale icon to open the Kale Deployment Panel - you will only see the title of the panel, and you will not see any of the controls.
 
 <img width="2560" height="1252" alt="Screenshot From 2025-09-05 10-47-27" src="https://github.com/user-attachments/assets/33eb8a12-7216-4566-b2e4-f052d6d56334" />
 
@@ -156,9 +157,30 @@ In order to see the Kale controls, you must open one of the curated example note
 
 <img alt="Kale JupyterLab Extension" src="docs/imgs/Extension.png"/>
 
-With this Kale Control Panel fully operational, you should be able to start a pipeline run from JupyterLab and see it appear in the `kfp` UI. 
+With this Kale Control Panel fully operational, you should be able to start a pipeline run from JupyterLab and see it appear in the `kfp` UI.
 Make sure to `Select experiment` and choose a `Pipeline Name`, and then hit `Compile and Run`. You will see progress bars appear.
 Navigate to the `kfp` UI, refresh the page, and check that your new pipeline run has appeared here.
+
+## FAQ
+
+To build images to be used as a NotebookServer in Kubeflow, refer to the
+Dockerfile in the `docker` folder.
+
+Head over to [FAQ](FAQ.md) to read about some known issues and some of the
+limitations imposed by the Kale data marshalling model.
+
+## Resources
+
+- Kale introduction [blog post](https://medium.com/kubeflow/automating-jupyter-notebook-deployments-to-kubeflow-pipelines-with-kale-a4ede38bea1f)
+- Codelabs showcasing Kale working in MiniKF with Arrikto's [Rok](https://www.arrikto.com/):
+  - [From Notebook to Kubeflow Pipelines](https://codelabs.developers.google.com/codelabs/cloud-kubeflow-minikf-kale/#0)
+  - [From Notebook to Kubeflow Pipelines with HP Tuning](https://arrik.to/demowfhp)
+- KubeCon NA Tutorial 2019: [From Notebook to Kubeflow Pipelines: An End-to-End Data Science Workflow](https://kccncna19.sched.com/event/Uaeq/tutorial-from-notebook-to-kubeflow-pipelines-an-end-to-end-data-science-workflow-michelle-casbon-google-stefano-fioravanzo-fondazione-bruno-kessler-ilias-katsakioris-arrikto?iframe=no&w=100%&sidebar=yes&bg=no)
+  / [video](http://youtube.com/watch?v=C9rJzTzVzvQ)
+- CNCF Webinar 2020: [From Notebook to Kubeflow Pipelines with MiniKF & Kale](https://www.cncf.io/webinars/from-notebook-to-kubeflow-pipelines-with-minikf-kale/)
+  / [video](https://www.youtube.com/watch?v=1fX9ZFWkvvs)
+- KubeCon EU Tutorial 2020: [From Notebook to Kubeflow Pipelines with HP Tuning: A Data Science Journey](https://kccnceu20.sched.com/event/ZerG/tutorial-from-notebook-to-kubeflow-pipelines-with-hp-tuning-a-data-science-journey-stefano-fioravanzo-ilias-katsakioris-arrikto)
+  / [video](https://www.youtube.com/watch?v=QK0NxhyADpM)
 
 ## Contribute
 
@@ -169,8 +191,8 @@ Please note: this functionality is still in development, and there is not a stre
 
 Make sure you have installed Kubeflow Pipelines(v2.4.0) as recommended in the official documentation [Kubeflow Pipelines Installation](https://www.kubeflow.org/docs/components/pipelines/operator-guides/installation/).
 
-
 Open a new terminal window for `backend`:
+
 ```bash
 # checkout to the backend directory
 cd backend/
@@ -185,6 +207,7 @@ pip install -e .[dev]
 ```
 
 Open a new terminal window for `kfp`:
+
 ```bash
 # start kfp locally in another terminal
 kubectl port-forward -n kubeflow svc/ml-pipeline-ui 8080:80
@@ -197,11 +220,21 @@ python ./backend/kale/cli.py --nb ./examples/base/candies_sharing.ipynb --kfp_ho
 kubectl port-forward -n kubeflow svc/ml-pipeline-ui 8080:80
 ```
 
+#### Notes to consider
+
+1. Component names can't be same as any other variable with same name being used in the user code.
+2. Component name can't have \_ and spaces, but instead have '-'
+3. Component names can't have capital letters and numbers after a '-'.
+4. Step names shouldn't have capital letters and no numbers after '-', eg. 'kid1' is fine, but not 'kid-1'.
+5. Step names with \_ are replaced to '-' for component names and appended with '-step' in the DSL script.
+6. Artifact variables are appended with '-artifact' in the DSL script.
+
 #### Labextension
 
 The JupyterLab Python package comes with its own yarn wrapper, called `jlpm`.
 
 Open a new terminal window to the `kale` directory and run the following:
+
 ```bash
 # activate the virtual environment
 conda activate my_project_env
@@ -227,6 +260,7 @@ jupyter labextension list
 ```
 
 Finally, you can run Kale in developer mode (note - this is not streamlined)
+
 ```bash
 # move to the base kale directory
 cd ..
@@ -237,17 +271,10 @@ jupyter lab
 # To make changes and rebuild, open 2nd tab inside labextension, then
 jlpm build
 ```
+
 Each time you make changes to the code, you will have to
 copy paste static directory files inside kubeflow-kale-labextension/labextension folder and refresh jupyterlab
 Now, you can test the extension with the notebooks inside the examples directory.
-
-## FAQ
-
-To build images to be used as a NotebookServer in Kubeflow, refer to the
-Dockerfile in the `docker` folder.
-
-Head over to [FAQ](FAQ.md) to read about some known issues and some of the
-limitations imposed by the Kale data marshalling model.
 
 #### Git Hooks
 
@@ -264,18 +291,3 @@ Currently installed git hooks:
 
 - `pre-commit`: Run a prettier check on staged files, using
   [pretty-quick](https://github.com/azz/pretty-quick)
-
-#### Known Bugs
-1. Fix Progress bar in left panel during compile and run.
-2. Fix opening of editor after clicking edit pencil icon above cells.
-3. Fix weakmap warning related in InlineMetadata.tsx which gets displayed while toggling the kale icon to enable state. It can be skipped for now in UI.
-4. Fix Kale icon in LeftPanel
-5. Fix building and packaging of labextension related with package.json, pyproject.toml, and tsconfig.json
-
-#### Notes to consider
-1. Component names can't be same as any other variable with same name being used in the user code.
-2. Component name can't have _ and spaces, but instead have '-'
-3. Component names can't have capital letters and numbers after a '-'.
-4. Step names shouldn't have capital letters and no numbers after '-', eg. 'kid1' is fine, but not 'kid-1'.
-5. Step names with _ are replaced to '-' for component names and appended with '-step' in the DSL script.
-6. Artifact variables are appended with '-artifact' in the DSL script.
