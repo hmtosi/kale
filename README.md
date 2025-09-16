@@ -270,9 +270,8 @@ cd labextension/
 jlpm build
 ```
 
-Each time you make changes to the code, you will have to
-copy paste static directory files inside kubeflow-kale-labextension/labextension folder and refresh jupyterlab
-Now, you can test the extension with the notebooks inside the examples directory.
+Each time you make changes to the code, you will have to copy the files from the `kale/labextension/static` folder and paste them to replace the same files in the `kale/labextension/kubeflow-kale-labextension/labextension` folder. Then, rerun `jlpm build` and restart JupyterLab. 
+Finally, you should be able to test the extension with the notebooks inside the examples directory.
 
 #### Git Hooks
 
