@@ -251,7 +251,7 @@ cd labextension/
 jlpm build
 
 # install dependencies using pyproject.toml
-pip install -e . --force-reinstal
+pip install -e . --force-reinstall
 
 # install labextension in dev mode
 jupyter labextension develop . --overwrite
@@ -268,7 +268,8 @@ cd ..
 # open jupyterlab
 jupyter lab
 
-# To make changes and rebuild, open 2nd tab inside labextension, then
+# To make changes and rebuild, open 2nd tab of terminal, then
+cd labextension/
 jlpm build
 ```
 
