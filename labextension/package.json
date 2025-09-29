@@ -7,9 +7,9 @@
         "jupyterlab",
         "jupyterlab-extension"
     ],
-    "homepage": "https://github.com/kubeflow-kale-labextension/kale",
+    "homepage": "https://github.com/kubeflow-kale/kale",
     "bugs": {
-        "url": "https://github.com/kubeflow-kale-labextension/kale/issues"
+        "url": "https://github.com/kubeflow-kale/kale/issues"
     },
     "license": "Apache-2.0",
     "author": {
@@ -26,7 +26,7 @@
     "style": "style/index.css",
     "repository": {
         "type": "git",
-        "url": "https://github.com/kubeflow-kale-labextension/kale.git"
+        "url": "https://github.com/kubeflow-kale/kale.git"
     },
     "scripts": {
         "build": "jlpm build:lib && jlpm build:labextension:dev",
@@ -38,7 +38,7 @@
         "clean": "jlpm clean:lib",
         "clean:lib": "rimraf lib tsconfig.tsbuildinfo",
         "clean:lintcache": "rimraf .eslintcache .stylelintcache",
-        "clean:labextension": "rimraf kubeflow-kale-labextension/labextension kubeflow-kale-labextension/_version.py",
+        "clean:labextension": "rimraf kubeflow_kale_labextension/labextension kubeflow_kale_labextension/_version.py",
         "clean:all": "jlpm clean:lib && jlpm clean:labextension && jlpm clean:lintcache",
         "eslint": "jlpm eslint:check --fix",
         "eslint:check": "eslint . --cache --ext .ts,.tsx",
@@ -56,11 +56,11 @@
         "watch:labextension": "jupyter labextension watch ."
     },
     "dependencies": {
-        "@jupyterlab/application": "^4.4.7",
-        "@jupyterlab/cells": "^4.4.7",
+        "@jupyterlab/application": "^4.4.9",
+        "@jupyterlab/cells": "^4.4.9",
         "@jupyterlab/coreutils": "^6.4.5",
-        "@jupyterlab/nbformat": "^4.4.7",
-        "@jupyterlab/notebook": "4.4.7"
+        "@jupyterlab/nbformat": "^4.4.9",
+        "@jupyterlab/notebook": "^4.4.9"
     },
     "devDependencies": {
         "@emotion/react": "^11.14.0",
@@ -112,12 +112,12 @@
                     "pip"
                 ],
                 "base": {
-                    "name": "kubeflow-kale-labextension"
+                    "name": "kubeflow_kale_labextension"
                 }
             }
         },
         "extension": true,
-        "outputDir": "kubeflow-kale-labextension/labextension"
+        "outputDir": "kubeflow_kale_labextension/labextension"
     },
     "eslintIgnore": [
         "node_modules",
