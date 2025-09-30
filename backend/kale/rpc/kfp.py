@@ -58,7 +58,10 @@ def create_experiment(request, experiment_name, raise_if_exists=False):
     exp = get_experiment(None, experiment_name)
     if not exp:
         experiment = client.create_experiment(name=experiment_name)
-        return {"id": experiment.experiment_id, "name": experiment.display_name}
+        return {
+            "id": experiment.experiment_id,
+            "name": experiment.display_name
+        }
     if raise_if_exists:
         raise ValueError("Failed to create experiment, experiment already"
                          " exists.")
@@ -88,7 +91,13 @@ def upload_pipeline(request, pipeline_package_path, pipeline_metadata):
                          "name": pipeline_name}}
 
 
-def run_pipeline(request, pipeline_metadata, pipeline_id, version_id, pipeline_package_path):
+def run_pipeline(
+    request,
+    pipeline_metadata,
+    pipeline_id,
+    version_id,
+    pipeline_package_path
+):
     """Run a pipeline."""
     run = kfputils.run_pipeline(
         experiment_name=pipeline_metadata["experiment_name"],
@@ -96,7 +105,11 @@ def run_pipeline(request, pipeline_metadata, pipeline_id, version_id, pipeline_p
         version_id=version_id,
         pipeline_package_path=pipeline_package_path)
 
-    return {"id": run.run_id, "name": run.run_info.display_name, "status": run.run_info.state}
+    return {
+        "id": run.run_id,
+        "name": run.run_info.display_name,
+        "status": run.run_info.state
+    }
 
 
 def get_run(request, run_id):

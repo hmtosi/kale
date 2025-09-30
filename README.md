@@ -215,9 +215,6 @@ kubectl port-forward -n kubeflow svc/ml-pipeline-ui 8080:80
 # run cli from outside the backend directory
 cd ..
 python ./backend/kale/cli.py --nb ./examples/base/candies_sharing.ipynb --kfp_host http://127.0.0.1:8080 --run_pipeline
-
-# start kfp locally in another terminal
-kubectl port-forward -n kubeflow svc/ml-pipeline-ui 8080:80
 ```
 
 #### Notes to consider
