@@ -82,7 +82,7 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-Install JupyterLab into your virtual environment. Then install the Kale backend from PyPI and the JupyterLab extension.
+Install the Kale backend from PyPI, and install the JupyterLab extension, `kubeflow-kale-labextension`.
 
 ```bash
 # activate your virtual environment if you haven't already
