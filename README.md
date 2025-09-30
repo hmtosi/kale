@@ -188,23 +188,33 @@ limitations imposed by the Kale data marshalling model.
 Follow these steps to run the extension in developer mode, so you can see and test your changes in real time.
 Please note: this functionality is still in development, and there is not a streamlined way to observe code changes as you make them.
 
-#### Backend
+#### Backend and Labextension
 
 Make sure you have installed Kubeflow Pipelines(v2.4.0) as recommended in the official documentation [Kubeflow Pipelines Installation](https://www.kubeflow.org/docs/components/pipelines/operator-guides/installation/).
 
-Open a new terminal window for `backend`:
+Open a new terminal window for `kale`:
 
 ```bash
-# checkout to the backend directory
-cd backend/
+# checkout to the backend/ directory
+cd backend
 
 # activate the virtual environment
 conda activate my_project_env
 # OR
 source .venv/bin/activate
 
+# make sure JupyterLab is installed in the venv
+pip install "jupyterlab>=4.0.0"
+
 # install the extension in dev mode
 pip install -e .[dev]
+
+# checkout to the labextension/ directory
+cd ..
+cd labextension
+
+#install the Jupyter extension
+pip install -e ".[test]"
 ```
 
 Open a new terminal window for `kfp`:
@@ -213,21 +223,12 @@ Open a new terminal window for `kfp`:
 # start kfp locally in another terminal
 kubectl port-forward -n kubeflow svc/ml-pipeline-ui 8080:80
 
-# run cli from outside the backend directory
+# run cli from outside the backend/ directory
 cd ..
 python ./backend/kale/cli.py --nb ./examples/base/candies_sharing.ipynb --kfp_host http://127.0.0.1:8080 --run_pipeline
 ```
 
-#### Notes to consider
-
-1. Component names can't be same as any other variable with same name being used in the user code.
-2. Component name can't have \_ and spaces, but instead have '-'
-3. Component names can't have capital letters and numbers after a '-'.
-4. Step names shouldn't have capital letters and no numbers after '-', eg. 'kid1' is fine, but not 'kid-1'.
-5. Step names with \_ are replaced to '-' for component names and appended with '-step' in the DSL script.
-6. Artifact variables are appended with '-artifact' in the DSL script.
-
-#### Labextension
+#### Build and Run Kale in Developer Mode
 
 The JupyterLab Python package comes with its own yarn wrapper, called `jlpm`.
 
@@ -239,6 +240,7 @@ conda activate my_project_env
 # OR
 source .venv/bin/activate
 
+<<<<<<< HEAD
 # make sure you have the correct version of jupyterlab
 pip install "jupyterlab>=4.0.0"
 
@@ -267,12 +269,19 @@ cd ..
 jupyter lab
 
 # To make changes and rebuild, open 2nd tab of terminal, then
+# checkout the labextension directory
 cd labextension/
+# rebuild 
 jlpm build
 ```
+#### Notes to consider
 
-Each time you make changes to the code, you will have to copy the files from the `kale/labextension/static` folder and paste them to replace the same files in the `kale/labextension/kubeflow-kale-labextension/labextension` folder. Then, rerun `jlpm build` and restart JupyterLab. 
-Finally, you should be able to test the extension with the notebooks inside the examples directory.
+1. Component names can't be same as any other variable with same name being used in the user code.
+2. Component name can't have \_ and spaces, but instead have '-'
+3. Component names can't have capital letters and numbers after a '-'.
+4. Step names shouldn't have capital letters and no numbers after '-', eg. 'kid1' is fine, but not 'kid-1'.
+5. Step names with \_ are replaced to '-' for component names and appended with '-step' in the DSL script.
+6. Artifact variables are appended with '-artifact' in the DSL script.
 
 #### Git Hooks
 
