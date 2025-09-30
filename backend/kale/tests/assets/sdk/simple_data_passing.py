@@ -28,6 +28,7 @@ def step3(a, c):
 @pipeline(
     name="test",
     experiment="test",
+    autosnapshot=False,
     steps_defaults={"labels": {"common-label": "true"}}
 )
 def mypipeline():
