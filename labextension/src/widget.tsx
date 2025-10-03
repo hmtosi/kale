@@ -32,12 +32,14 @@ import { Widget } from '@lumino/widgets';
 import * as React from 'react';
 
 import '../style/index.css';
+import kaleIconSvg from '../style/icons/kale.svg';
 
 import { KubeflowKaleLeftPanel } from './widgets/LeftPanel';
 import NotebookUtils from './lib/NotebookUtils';
 import { executeRpc, globalUnhandledRejection } from './lib/RPCUtils';
 import { Kernel } from '@jupyterlab/services';
 import { PageConfig } from '@jupyterlab/coreutils';
+import { LabIcon } from '@jupyterlab/ui-components';
 
 /* tslint:disable */
 export const IKubeflowKale = new Token<IKubeflowKale>(
@@ -49,6 +51,9 @@ export interface IKubeflowKale {
 }
 
 const id = 'kubeflow-kale-labextension:deploymentPanel';
+
+const kaleIcon = new LabIcon({ name: 'kale:logo', svgstr: kaleIconSvg });
+
 /**
  * Adds a visual Kubeflow Pipelines Deployment tool to the sidebar.
  */
@@ -140,7 +145,7 @@ async function activate(
       />
     );
     widget.id = 'kubeflow-kale-labextension/kubeflowDeployment';
-    widget.title.iconClass = 'jp-kale-logo jp-SideBar-tabIcon';
+    widget.title.icon = kaleIcon;
     widget.title.caption = 'Kubeflow Pipelines Deployment Panel';
     widget.node.classList.add('kale-panel');
 
