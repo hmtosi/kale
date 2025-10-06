@@ -16,28 +16,34 @@
 
 import * as React from 'react';
 import { Input } from './Input';
-import { RokInput } from './RokInput';
-import { Button } from '@material-ui/core';
-import DeleteIcon from '@material-ui/icons/Delete';
+
+import { Button } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 export interface IAnnotation {
   key: string;
   value: string;
 }
 
-interface AnnotationInputProps {
+interface IAnnotationInputProps {
   label: string;
   volumeIdx: number;
   annotationIdx: number;
   rokAvailable?: boolean;
   cannotBeDeleted?: boolean;
   annotation: { key: string; value: string };
-  deleteValue: Function;
-  updateValue: Function;
+  deleteValue: (idx: number, annotationIdx: number) => void;
+  updateValue: (
+    annotation: { key: string; value: string },
+    idx: number,
+    annotationIdx: number
+  ) => void;
 }
 
-export const AnnotationInput: React.FunctionComponent<AnnotationInputProps> = props => {
-  const [annotation, setAnnotation] = React.useState({ key: '', value: '' });
+export const AnnotationInput: React.FunctionComponent<
+  IAnnotationInputProps
+> = props => {
+  const [, setAnnotation] = React.useState<IAnnotation>({ key: '', value: '' });
 
   React.useEffect(() => {
     // need this to set the annotation when the notebook is loaded
@@ -49,7 +55,7 @@ export const AnnotationInput: React.FunctionComponent<AnnotationInputProps> = pr
     props.updateValue(
       { ...props.annotation, key: key },
       props.volumeIdx,
-      props.annotationIdx,
+      props.annotationIdx
     );
   };
 
@@ -57,28 +63,17 @@ export const AnnotationInput: React.FunctionComponent<AnnotationInputProps> = pr
     props.updateValue(
       { ...props.annotation, value: value },
       props.volumeIdx,
-      props.annotationIdx,
+      props.annotationIdx
     );
   };
 
-  const valueField =
-    props.rokAvailable && props.annotation.key === 'rok/origin' ? (
-      <RokInput
-        updateValue={updateValue}
-        value={props.annotation.value}
-        label="Rok URL"
-        inputIndex={props.volumeIdx}
-        annotationIdx={props.annotationIdx}
-      />
-    ) : (
-      <Input
-        updateValue={updateValue}
-        value={props.annotation.value}
-        label="Value"
-        inputIndex={props.volumeIdx}
-        variant="standard"
-      />
-    );
+  <Input
+    updateValue={updateValue}
+    value={props.annotation.value}
+    label="Value"
+    inputIndex={props.volumeIdx}
+    variant="standard"
+  />;
 
   return (
     <div className="toolbar">
@@ -92,7 +87,15 @@ export const AnnotationInput: React.FunctionComponent<AnnotationInputProps> = pr
           variant="standard"
         />
       </div>
-      <div style={{ width: '50%' }}>{valueField}</div>
+      <div style={{ width: '50%' }}>
+        <Input
+          updateValue={updateValue}
+          value={props.annotation.value}
+          label="Value"
+          inputIndex={props.volumeIdx}
+          variant="standard"
+        />
+      </div>
       {!props.cannotBeDeleted ? (
         <div className="delete-button">
           <Button

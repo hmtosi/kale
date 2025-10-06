@@ -23,7 +23,7 @@ import {
   KernelSpecAPI,
 } from '@jupyterlab/services';
 import { CommandRegistry } from '@lumino/commands';
-// @ts-ignore
+// @ts-expect-error This module is not typed
 import SanitizedHTML from 'react-sanitized-html';
 import * as React from 'react';
 import { ReactElement } from 'react';
@@ -51,12 +51,17 @@ export default class NotebookUtilities {
    * @param notebook NotebookPanel
    */
   public static clearCellOutputs(notebook: NotebookPanel): void {
+    if (!notebook.model) {
+      throw new Error('Notebook model is null');
+    }
+
     for (let i = 0; i < notebook.model.cells.length; i++) {
-      if (!isCodeCellModel(notebook.model.cells.get(i))) {
+      const cell = notebook.model.cells.get(i);
+      if (!isCodeCellModel(cell)) {
         continue;
       }
-      (notebook.model.cells.get(i) as CodeCellModel).executionCount = null;
-      (notebook.model.cells.get(i) as CodeCellModel).outputs.clear();
+      (cell as CodeCellModel).executionCount = null;
+      (cell as CodeCellModel).outputs.clear();
     }
   }
 
@@ -69,12 +74,11 @@ export default class NotebookUtilities {
     notebook: NotebookPanel,
     cell: { cell: Cell; index: number },
   ): void {
-    notebook.content.select(cell.cell);
+    notebook.content.select(cell.cell as any);
     notebook.content.activeCellIndex = cell.index;
-    const cellPosition = (notebook.content.node.childNodes[
-      cell.index
-    ] as HTMLElement).getBoundingClientRect();
-    notebook.content.scrollToPosition(cellPosition.top);
+
+    notebook.content.scrollToCell(cell.cell);
+
   }
 
   /**
@@ -210,7 +214,11 @@ export default class NotebookUtilities {
     withPrompt: boolean = false,
     waitSave: boolean = false,
   ): Promise<boolean> {
-    if (notebookPanel && notebookPanel.model.dirty) {
+    if (!notebookPanel?.model) {
+      return false;
+    }
+
+    if (notebookPanel.model.dirty) {
       await notebookPanel.context.ready;
       if (
         withPrompt &&
@@ -233,7 +241,7 @@ export default class NotebookUtilities {
    * @param notebookPanel The notebook panel containing the notebook to serialize
    */
   public static notebookToJSON(notebookPanel: NotebookPanel): any {
-    if (notebookPanel) {
+    if (notebookPanel?.content?.model) {
       return notebookPanel.content.model.toJSON();
     }
     return null;
@@ -251,8 +259,14 @@ export default class NotebookUtilities {
         'The notebook is null or undefined. No meta data available.',
       );
     }
-    if (notebookPanel.model && notebookPanel.model.metadata.has(key)) {
-      return notebookPanel.model.metadata.get(key);
+
+    if (notebookPanel.model?.metadata) {
+      const metadata = notebookPanel.model.metadata as any;
+      if (typeof metadata.has === 'function' && metadata.has(key)) {
+        return metadata.get(key);
+      }
+      // Fallback for different metadata implementations
+      return (metadata as any)[key] || null;
     }
     return null;
   }
@@ -278,7 +292,22 @@ export default class NotebookUtilities {
         'The notebook is null or undefined. No meta data available.',
       );
     }
-    const oldVal = notebookPanel.model.metadata.set(key, value);
+
+    if (!notebookPanel.model?.metadata) {
+      throw new Error('Notebook metadata is not available.');
+    }
+
+    const metadata = notebookPanel.model.metadata as any;
+    let oldVal: any;
+
+    if (typeof metadata.set === 'function') {
+      oldVal = metadata.set(key, value);
+    } else {
+      // Fallback for different metadata implementations
+      oldVal = (metadata as any)[key];
+      (metadata as any)[key] = value;
+    }
+
     if (save) {
       this.saveNotebook(notebookPanel);
     }
@@ -288,10 +317,16 @@ export default class NotebookUtilities {
   public static async runGlobalCells(
     notebook: NotebookPanel,
   ): Promise<IRunCellResponse> {
+    if (!notebook.model) {
+      throw new Error('Notebook model is null');
+    }
+
     let cell = { cell: notebook.content.widgets[0], index: 0 };
     const reservedCellsToBeIgnored = ['skip', 'pipeline-metrics'];
+
     for (let i = 0; i < notebook.model.cells.length; i++) {
-      if (!isCodeCellModel(notebook.model.cells.get(i))) {
+      const cellModel = notebook.model.cells.get(i);
+      if (!isCodeCellModel(cellModel as any)) {
         continue;
       }
       const blockName = CellUtilities.getStepName(notebook, i);
@@ -302,7 +337,8 @@ export default class NotebookUtilities {
         RESERVED_CELL_NAMES.includes(blockName)
       ) {
         while (i < notebook.model.cells.length) {
-          if (!isCodeCellModel(notebook.model.cells.get(i))) {
+          const currentCellModel = notebook.model.cells.get(i);
+          if (!isCodeCellModel(currentCellModel as any)) {
             i++;
             continue;
           }
@@ -312,20 +348,32 @@ export default class NotebookUtilities {
             i--;
             break;
           }
-          cell = { cell: notebook.content.widgets[i], index: i };
+          cell = { cell: notebook.content.widgets[i] as any, index: i };
           this.selectAndScrollToCell(notebook, cell);
-          // this.setState({ activeCellIndex: cell.index, activeCell: cell.cell });
-          const kernelMsg = (await CodeCell.execute(
-            notebook.content.widgets[i] as CodeCell,
-            notebook.sessionContext,
-          )) as KernelMessage.IExecuteReplyMsg;
-          if (kernelMsg.content && kernelMsg.content.status === 'error') {
+
+          // Execute the cell with proper error handling
+          try {
+            const kernelMsg = (await CodeCell.execute(
+              notebook.content.widgets[i] as unknown as CodeCell,
+              notebook.sessionContext,
+            )) as KernelMessage.IExecuteReplyMsg;
+
+            if (kernelMsg.content && kernelMsg.content.status === 'error') {
+              return {
+                status: 'error',
+                cellType: blockName,
+                cellIndex: i,
+                ename: kernelMsg.content.ename,
+                evalue: kernelMsg.content.evalue,
+              };
+            }
+          } catch (error) {
             return {
               status: 'error',
               cellType: blockName,
               cellIndex: i,
-              ename: kernelMsg.content.ename,
-              evalue: kernelMsg.content.evalue,
+              ename: 'ExecutionError',
+              evalue: String(error),
             };
           }
           i++;
@@ -340,9 +388,8 @@ export default class NotebookUtilities {
    * Source code here: https://github.com/jupyterlab/jupyterlab/tree/473348d25bcb258ca2f0c127dd8fb5b193217135/packages/services
    */
   public static async createNewKernel() {
-    const defaultKernelSpec = await KernelSpecAPI.getSpecs().then(
-      (res: KernelSpecAPI.ISpecModels) => res.default,
-    );
+    const specs = await KernelSpecAPI.getSpecs();
+    const defaultKernelSpec = specs.default;
     return await new KernelManager().startNew({ name: defaultKernelSpec });
   }
 
@@ -352,7 +399,8 @@ export default class NotebookUtilities {
   //  created at startup. The only (possible) drawback is that we can not name
   //  a kernel instance with a custom id/name, so when refreshing JupyterLab we would
   //  not recognize the kernel. A solution could be to have a kernel spec dedicated to kale rpc calls.
-  public static async executeWithNewKernel(action: Function, args: any[] = []) {
+  public static async executeWithNewKernel(action: (kernel: Kernel.IKernelConnection, ...args: any[]) => any,
+    args: any[] = []) {
     // create brand new kernel
     const _k = await this.createNewKernel();
     // execute action inside kernel
@@ -427,7 +475,7 @@ export default class NotebookUtilities {
         content.traceback.forEach((line: string) =>
           console.log(
             line.replace(
-              /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
+              /[\t\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
               '',
             ),
           ),
@@ -459,8 +507,13 @@ export default class NotebookUtilities {
     // Wait for notebook panel to be ready
     await notebookPanel.sessionContext.ready;
 
+    const kernel = notebookPanel.sessionContext.session?.kernel;
+    if (!kernel) {
+      throw new Error('Kernel is not available.');
+    }
+
     return this.sendKernelRequest(
-      notebookPanel.sessionContext.session.kernel,
+      kernel,
       runCode,
       userExpressions,
       runSilent,

@@ -1,6 +1,7 @@
-import { createMuiTheme } from '@material-ui/core/styles';
+import { createTheme } from '@mui/material/styles';
 
-declare module '@material-ui/core/styles/createMuiTheme' {
+declare module '@mui/material/styles/createTheme' {
+  // eslint-disable-next-line
   interface Theme {
     kale: {
       headers: {
@@ -9,6 +10,7 @@ declare module '@material-ui/core/styles/createMuiTheme' {
     };
   }
   // allow configuration using `createMuiTheme`
+  // eslint-disable-next-line
   interface ThemeOptions {
     kale?: {
       headers?: {
@@ -18,22 +20,22 @@ declare module '@material-ui/core/styles/createMuiTheme' {
   }
 }
 
-export const theme = createMuiTheme({
+export const theme = createTheme({
   palette: {
     secondary: {
       main: '#753BBD',
       dark: '#512984',
-      light: '#9062ca',
+      light: '#9062ca'
     },
     primary: {
       main: '#2e82d7',
       dark: '#205b96',
-      light: '#579bdf',
-    },
+      light: '#579bdf'
+    }
   },
   kale: {
     headers: {
-      main: '#753BBD',
-    },
-  },
+      main: '#753BBD'
+    }
+  }
 });

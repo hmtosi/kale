@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-///<reference path="../node_modules/@types/node/index.d.ts"/>
-
 import {
   JupyterFrontEnd,
   JupyterFrontEndPlugin,
   ILabShell,
-  ILayoutRestorer,
+  ILayoutRestorer
 } from '@jupyterlab/application';
 
-import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
+import { INotebookTracker } from '@jupyterlab/notebook';
 
 import { IDocumentManager } from '@jupyterlab/docmanager';
 
@@ -34,30 +32,28 @@ import { Widget } from '@lumino/widgets';
 import * as React from 'react';
 
 import '../style/index.css';
+import kaleIconSvg from '../style/icons/kale.svg';
 
 import { KubeflowKaleLeftPanel } from './widgets/LeftPanel';
 import NotebookUtils from './lib/NotebookUtils';
-import {
-  executeRpc,
-  globalUnhandledRejection,
-  BaseError,
-  IRPCError,
-  RPCError,
-  RPC_CALL_STATUS,
-} from './lib/RPCUtils';
+import { executeRpc, globalUnhandledRejection } from './lib/RPCUtils';
 import { Kernel } from '@jupyterlab/services';
 import { PageConfig } from '@jupyterlab/coreutils';
+import { LabIcon } from '@jupyterlab/ui-components';
 
 /* tslint:disable */
 export const IKubeflowKale = new Token<IKubeflowKale>(
-  'kubeflow-kale:IKubeflowKale',
+  'kubeflow-kale-labextension:IKubeflowKale'
 );
 
 export interface IKubeflowKale {
   widget: Widget;
 }
 
-const id = 'kubeflow-kale:deploymentPanel';
+const id = 'kubeflow-kale-labextension:deploymentPanel';
+
+const kaleIcon = new LabIcon({ name: 'kale:logo', svgstr: kaleIconSvg });
+
 /**
  * Adds a visual Kubeflow Pipelines Deployment tool to the sidebar.
  */
@@ -66,7 +62,7 @@ export default {
   id,
   requires: [ILabShell, ILayoutRestorer, INotebookTracker, IDocumentManager],
   provides: IKubeflowKale,
-  autoStart: true,
+  autoStart: true
 } as JupyterFrontEndPlugin<IKubeflowKale>;
 
 async function activate(
@@ -74,16 +70,32 @@ async function activate(
   labShell: ILabShell,
   restorer: ILayoutRestorer,
   tracker: INotebookTracker,
-  docManager: IDocumentManager,
+  docManager: IDocumentManager
 ): Promise<IKubeflowKale> {
-  let widget: ReactWidget;
-  const kernel: Kernel.IKernelConnection = await NotebookUtils.createNewKernel();
+  let widget: ReactWidget | undefined;
+  const kernel: Kernel.IKernelConnection =
+    await NotebookUtils.createNewKernel();
   window.addEventListener('beforeunload', () => kernel.shutdown());
   window.addEventListener('unhandledrejection', globalUnhandledRejection);
+
+  /**
+   * Detect if Kale is installed
+   */
+  async function getBackend(kernel: Kernel.IKernelConnection) {
+    try {
+      await NotebookUtils.sendKernelRequest(kernel, 'import kale', {});
+    } catch (error) {
+      console.error(`Kale backend is not installed: ${error}`);
+
+      return false;
+    }
+    return true;
+  }
+
   // TODO: backend can become an Enum that indicates the type of
   //  env we are in (like Local Laptop, MiniKF, GCP, UI without Kale, ...)
   const backend = await getBackend(kernel);
-  let rokError: IRPCError = null;
+  // let rokError: IRPCError = null;
   if (backend) {
     try {
       await executeRpc(kernel, 'log.setup_logging');
@@ -91,50 +103,6 @@ async function activate(
       globalUnhandledRejection({ reason: error });
       throw error;
     }
-
-    try {
-      await executeRpc(kernel, 'rok.check_rok_availability');
-    } catch (error) {
-      const unexpectedErrorCodes = [
-        RPC_CALL_STATUS.EncodingError,
-        RPC_CALL_STATUS.ImportError,
-        RPC_CALL_STATUS.UnhandledError,
-      ];
-      if (
-        error instanceof RPCError &&
-        !unexpectedErrorCodes.includes(error.error.code)
-      ) {
-        rokError = error.error;
-        console.warn('Rok is not available', rokError);
-      } else {
-        globalUnhandledRejection({ reason: error });
-        throw error;
-      }
-    }
-  } else {
-    rokError = {
-      rpc: 'rok.check_rok_availability',
-      code: RPC_CALL_STATUS.ImportError,
-      err_message: 'Rok is not available',
-      err_details:
-        'To use this Rok feature you first need Kale running' +
-        ' in the backend.',
-      err_cls: 'importError',
-    };
-    console.warn('Rok is not available', rokError);
-  }
-
-  /**
-   * Detect if Kale is installed
-   */
-  async function getBackend(kernel: Kernel.IKernelConnection) {
-    try {
-      await NotebookUtils.sendKernelRequest(kernel, `import kale`, {});
-    } catch (error) {
-      console.error('Kale backend is not installed.');
-      return false;
-    }
-    return true;
   }
 
   async function loadPanel() {
@@ -143,7 +111,7 @@ async function activate(
       // Check if KALE_NOTEBOOK_PATH env variable exists and if so load
       // that Notebook
       const path = await executeRpc(kernel, 'nb.resume_notebook_path', {
-        server_root: PageConfig.getOption('serverRoot'),
+        server_root: PageConfig.getOption('serverRoot')
       });
       if (path) {
         console.log('Resuming notebook ' + path);
@@ -153,11 +121,11 @@ async function activate(
     }
 
     // add widget
-    if (!widget.isAttached) {
+    if (widget && !widget.isAttached) {
       labShell.add(widget, 'left');
     }
     // open widget if resuming from a notebook
-    if (reveal_widget) {
+    if (reveal_widget && widget) {
       // open kale panel
       widget.activate();
     }
@@ -174,11 +142,10 @@ async function activate(
         docManager={docManager}
         backend={backend}
         kernel={kernel}
-        rokError={rokError}
-      />,
+      />
     );
-    widget.id = 'kubeflow-kale/kubeflowDeployment';
-    widget.title.iconClass = 'jp-kale-logo jp-SideBar-tabIcon';
+    widget.id = 'kubeflow-kale-labextension/kubeflowDeployment';
+    widget.title.icon = kaleIcon;
     widget.title.caption = 'Kubeflow Pipelines Deployment Panel';
     widget.node.classList.add('kale-panel');
 
@@ -191,5 +158,12 @@ async function activate(
     loadPanel();
   });
 
-  return { widget };
+  return {
+    get widget() {
+      if (!widget) {
+        throw new Error('Widget not initialized yet');
+      }
+      return widget;
+    }
+  };
 }

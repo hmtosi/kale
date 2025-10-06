@@ -15,18 +15,18 @@
  */
 
 import * as React from 'react';
-import { Chip, Tooltip } from '@material-ui/core';
+import { Chip, Tooltip } from '@mui/material';
 import ColorUtils from '../../lib/ColorUtils';
 import {
   RESERVED_CELL_NAMES,
-  RESERVED_CELL_NAMES_HELP_TEXT,
+  RESERVED_CELL_NAMES_HELP_TEXT
 } from './CellMetadataEditor';
-import EditIcon from '@material-ui/icons/Edit';
+import EditIcon from '@mui/icons-material/Edit';
 import { CellMetadataContext } from '../../lib/CellMetadataContext';
 
 interface IProps {
   blockName: string;
-  previousBlockName: string;
+  previousBlockName?: string;
   stepDependencies: string[];
   limits: { [id: string]: string };
   cellElement: any;
@@ -46,8 +46,18 @@ const DefaultState: IState = {
   color: '',
   dependencies: [],
   showEditor: false,
-  isMergedCell: false,
+  isMergedCell: false
 };
+// Check if an object is DOMElement
+function isDOMElement(obj: any): obj is HTMLElement {
+  return (
+    obj &&
+    typeof obj === 'object' &&
+    obj.nodeType === 1 &&
+    typeof obj.classList !== 'undefined' &&
+    typeof obj.querySelector === 'function'
+  );
+}
 
 /**
  * This component is used by InlineCellMetadata to display some state information
@@ -58,8 +68,11 @@ const DefaultState: IState = {
  */
 export class InlineMetadata extends React.Component<IProps, IState> {
   static contextType = CellMetadataContext;
-  wrapperRef: React.RefObject<HTMLDivElement> = null;
+  context!: React.ContextType<typeof CellMetadataContext>;
+  wrapperRef: React.RefObject<HTMLDivElement> | null = null;
   state = DefaultState;
+  private retryCount = 0;
+  private maxRetries = 5;
 
   constructor(props: IProps) {
     super(props);
@@ -74,38 +87,84 @@ export class InlineMetadata extends React.Component<IProps, IState> {
     this.checkIfReservedName();
     this.updateStyles();
     this.updateDependencies();
+    this.attemptToMoveComponent();
+  }
+
+  attemptToMoveComponent() {
+    if (!isDOMElement(this.props.cellElement)) {
+      console.warn(
+        `InlineMetadata: cellElement is not a valid DOM element (attempt ${this.retryCount + 1}/${this.maxRetries})`
+      );
+
+      if (this.retryCount < this.maxRetries) {
+        this.retryCount++;
+        // Exponential backoff: 100ms, 200ms, 400ms, 800ms, 1600ms
+        const delay = 100 * Math.pow(2, this.retryCount - 1);
+        setTimeout(() => {
+          this.attemptToMoveComponent();
+        }, delay);
+      } else {
+        console.error(
+          'InlineMetadata: Failed to find valid cellElement after maximum retries'
+        );
+      }
+      return;
+    }
+
     this.moveComponentElementInCell();
   }
 
   moveComponentElementInCell() {
-    if (
-      this.wrapperRef &&
-      !this.wrapperRef.current.classList.contains('moved')
-    ) {
-      this.wrapperRef.current.classList.add('moved');
-      this.props.cellElement.insertAdjacentElement(
-        'afterbegin',
-        this.wrapperRef.current,
+    if (!this.props.cellElement) {
+      console.warn(
+        'InlineMetadata: cellElement is undefined, cannot move component'
       );
+      return;
+    }
+
+    if (!this.wrapperRef?.current) {
+      console.warn(
+        'InlineMetadata: wrapperRef.current is null, cannot move component'
+      );
+      return;
+    }
+
+    try {
+      if (!this.wrapperRef!.current.classList.contains('moved')) {
+        this.wrapperRef!.current.classList.add('moved');
+        this.props.cellElement.insertAdjacentElement(
+          'afterbegin',
+          this.wrapperRef!.current
+        );
+        console.log('InlineMetadata: Succesfully moved component to cell');
+      }
+    } catch (error) {
+      console.error('InlineMetadata: Error moving component element:', error);
     }
   }
 
   componentWillUnmount() {
     const cellElement = this.props.cellElement;
-    cellElement.classList.remove('kale-merged-cell');
-
-    const codeMirrorElem = cellElement.querySelector('.CodeMirror');
-    if (codeMirrorElem) {
-      codeMirrorElem.style.border = '';
+    if (isDOMElement(cellElement)) {
+      cellElement.classList.remove('kale-merged-cell');
+      const codeMirrorElem = cellElement.querySelector(
+        '.CodeMirror'
+      ) as HTMLElement;
+      if (codeMirrorElem) {
+        codeMirrorElem.style.border = '';
+      }
     }
 
-    if (this.wrapperRef) {
+    if (this.wrapperRef?.current) {
       this.wrapperRef.current.remove();
     }
   }
 
   componentDidUpdate(prevProps: Readonly<IProps>, prevState: Readonly<IState>) {
-    this.setState(this.updateIsMergedState);
+    const mergedState = this.updateIsMergedState(this.state, this.props);
+    if (mergedState) {
+      this.setState(mergedState);
+    }
 
     if (
       prevProps.blockName !== this.props.blockName ||
@@ -118,15 +177,22 @@ export class InlineMetadata extends React.Component<IProps, IState> {
       this.updateDependencies();
     }
 
-    this.checkIfReservedName();
+    if (prevProps.cellElement !== this.props.cellElement) {
+      this.retryCount = 0; // Reset retry count for new cellElement
+      this.attemptToMoveComponent();
+    }
 
-    this.setState(this.updateEditorState);
+    this.checkIfReservedName();
+    const editorState = this.updateEditorState(this.state, this.props);
+    if (editorState) {
+      this.setState(editorState);
+    }
   }
 
   updateEditorState = (state: IState, props: IProps) => {
     let showEditor = false;
 
-    if (this.context.isEditorVisible) {
+    if (this.context && this.context.isEditorVisible) {
       if (this.context.activeCellIndex === props.cellIndex) {
         showEditor = true;
       }
@@ -146,9 +212,13 @@ export class InlineMetadata extends React.Component<IProps, IState> {
       newIsMergedCell = true;
 
       // TODO: This is a side effect, consider moving it somewhere else.
-      cellElement.classList.add('kale-merged-cell');
+      if (isDOMElement(cellElement)) {
+        cellElement.classList.add('kale-merged-cell');
+      }
     } else {
-      cellElement.classList.remove('kale-merged-cell');
+      if (isDOMElement(cellElement)) {
+        cellElement.classList.remove('kale-merged-cell');
+      }
     }
 
     if (newIsMergedCell === state.isMergedCell) {
@@ -181,13 +251,16 @@ export class InlineMetadata extends React.Component<IProps, IState> {
    * the correct color, based on the current block name.
    */
   updateStyles() {
+    if (!isDOMElement(this.props.cellElement)) {
+      return;
+    }
     const name = this.props.blockName || this.props.previousBlockName;
     const codeMirrorElem = this.props.cellElement.querySelector(
-      '.CodeMirror',
+      '.CodeMirror'
     ) as HTMLElement;
 
     if (codeMirrorElem) {
-      codeMirrorElem.style.borderLeft = `2px solid transparent`;
+      codeMirrorElem.style.borderLeft = '2px solid transparent';
     }
     if (!name) {
       this.setState({ color: '' });
@@ -209,8 +282,8 @@ export class InlineMetadata extends React.Component<IProps, IState> {
     const gpuType = Object.keys(this.props.limits).includes('nvidia.com/gpu')
       ? 'nvidia.com/gpu'
       : Object.keys(this.props.limits).includes('amd.com/gpu')
-      ? 'amd.com/gpu'
-      : undefined;
+        ? 'amd.com/gpu'
+        : undefined;
 
     return gpuType !== undefined ? (
       <React.Fragment>
@@ -236,7 +309,7 @@ export class InlineMetadata extends React.Component<IProps, IState> {
           <div
             className="kale-inline-cell-dependency"
             style={{
-              backgroundColor: `#${rgb}`,
+              backgroundColor: `#${rgb}`
             }}
           ></div>
         </Tooltip>
@@ -245,15 +318,16 @@ export class InlineMetadata extends React.Component<IProps, IState> {
     this.setState({ dependencies });
   }
 
-  openEditor() {
+  openEditor = () => {
+    console.log('Clicking on edit');
     const showEditor = true;
     this.setState({ showEditor });
     this.context.onEditorVisibilityChange(showEditor);
-  }
+  };
 
   render() {
     const details = RESERVED_CELL_NAMES.includes(
-      this.props.blockName,
+      this.props.blockName
     ) ? null : (
       <>
         {/* Add a `depends on: ` string before the deps dots in case there are some*/}
@@ -268,7 +342,10 @@ export class InlineMetadata extends React.Component<IProps, IState> {
 
     return (
       <div>
-        <div ref={this.wrapperRef}>
+        <div
+          ref={this.wrapperRef}
+          className={'kale-inline-cell-metadata-container'}
+        >
           <div
             className={
               'kale-inline-cell-metadata' +
@@ -304,8 +381,10 @@ export class InlineMetadata extends React.Component<IProps, IState> {
           </div>
 
           <div
-            style={{ position: 'relative' }}
-            className={this.state.showEditor ? ' hidden' : ''}
+            className={
+              'kale-editor-toggle-parent' +
+              (this.state.showEditor ? ' hidden' : '')
+            }
           >
             <button className="kale-editor-toggle" onClick={this.openEditor}>
               <EditIcon />

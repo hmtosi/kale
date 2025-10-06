@@ -32,10 +32,10 @@
 KALE (Kubeflow Automated pipeLines Engine) is a project that aims at simplifying
 the Data Science experience of deploying Kubeflow Pipelines workflows.
 
-Kubeflow is a great platform for orchestrating complex workflows on top
-Kubernetes and Kubeflow Pipeline provides the mean to create reusable components
+Kubeflow is a great platform for orchestrating complex workflows on top of
+Kubernetes, and Kubeflow Pipelines provide the means to create reusable components
 that can be executed as part of workflows. The self-service nature of Kubeflow
-make it extremely appealing for Data Science use, at it provides an easy access
+makes it extremely appealing for Data Science use, at it provides an easy access
 to advanced distributed jobs orchestration, re-usability of components, Jupyter
 Notebooks, rich UIs and more. Still, developing and maintaining Kubeflow
 workflows can be hard for data scientists, who may not be experts in working
@@ -44,7 +44,7 @@ involve processes of data exploration, iterative modelling and interactive
 environments (mostly Jupyter notebook).
 
 Kale bridges this gap by providing a simple UI to define Kubeflow Pipelines
-workflows directly from you JupyterLab interface, without the need to change a
+workflows directly from your JupyterLab interface, without the need to change a
 single line of code.
 
 Read more about Kale and how it works in this Medium post:
@@ -53,19 +53,48 @@ Read more about Kale and how it works in this Medium post:
 ## Getting started
 
 ### Requirements
-- Install Kubeflow Pipelines(v2.4.0) as recommended in the official documentation [Kubeflow Pipelines Installation](https://www.kubeflow.org/docs/components/pipelines/operator-guides/installation/)
-- Kubernetes
 
-Install the Kale backend from PyPI and the JupyterLab extension. You can find a
-set of curated Notebooks in the
-[examples repository](https://github.com/kubeflow-kale/examples)
+- Install a Kubernetes cluster (basic Kubernetes cluster, `minikube`, `kind`)
+- Install Kubeflow Pipelines(v2.4.0) as recommended in the official documentation [Kubeflow Pipelines Installation](https://www.kubeflow.org/docs/components/pipelines/operator-guides/installation/)
+
+### Installation
+
+Clone the repository:
 
 ```bash
-# install kale
-pip install kubeflow-kale
+git clone https://github.com/kubeflow-kale/kale.git
+```
+
+To follow the best practices for coding, create a virtual environment to hold your installation. There are a couple of methods for this.
+`conda`:
+
+```bash
+cd kale
+conda create --name my_project_env python=3.10
+conda activate my_project_env
+```
+
+`venv`:
+
+```bash
+cd kale
+python -m venv .venv
+source .venv/bin/activate
+```
+
+Install JupyterLab into your virtual environment. Then install the Kale backend from PyPI and the JupyterLab extension.
+
+```bash
+# activate your virtual environment if you haven't already
+conda activate my_project_env
+# OR
+source .venv/bin/activate
 
 # install jupyter lab
 pip install "jupyterlab>=4.0.0"
+
+# install kale
+pip install kubeflow-kale
 
 # install the extension
 jupyter labextension install kubeflow-kale-labextension
@@ -76,12 +105,66 @@ jupyter labextension list
 jupyter lab
 ```
 
-<img alt="Kale JupyterLab Extension" src="https://raw.githubusercontent.com/kubeflow-kale/kale/master/docs/imgs/labextension.png"/>
+### Verify backend installation
+
+First, ensure that your `kfp` installation is running. Open a new terminal window and run the following:
+
+```bash
+# start your cluster if you haven't already - this example uses minikube
+minikube start
+
+# check that the ml-pipeline-persistenceagent and ml-pipeline-ui pods are both running
+kubectl get pods -n kubeflow
+
+# start kfp on localhost
+kubectl port-forward -n kubeflow svc/ml-pipeline-ui 8080:80
+```
+
+Now, when you navigate to the `localhost` url, you should see the KFP UI running with two example pipeline tutorials loaded and ready.
+(If the pipelines do not appear, and there is a blue circle "wait" symbol instead, you will need to review the steps for setting up K8s and installing `kfp`.)
+
+Once you have confirmed that the `kfp` install is working as expected, verify that the kale backend has connected to it.
+Open a new terminal window and run the following:
+
+```bash
+# navigate to the kale/ directory
+cd ..
+
+# activate the virtual environment
+conda activate my_project_env
+# OR
+source .venv/bin/activate
+
+# manually call one of the example pipelines to populate in the kfp UI
+python ./backend/kale/cli.py --nb ./examples/base/candies_sharing.ipynb --kfp_host http://127.0.0.1:8080 --run_pipeline
+
+# (you can try running the following test, but it is in development and will fail)
+pytest -x -vv # TODO
+```
+
+The `run-pipeline` command should generate a DSL script in the `root/.kale` directory and create and run a new pipeline called `kale-pipeline`.
+Refresh the `kfp` UI browser - you should now see this pipeline.
+
+### Verify frontend installation
+
+Navigate to the JupyterLab window that was opened by the `install` steps. You should see JupyterLab with the Kale icon in the left hand panel.
+(You may want to stop and restart the JupyterLab session from the terminal to make sure it is updated with your backend changes from the previous step.)
+Click on the Kale icon to open the Kale Deployment Panel - you will only see the title of the panel, and you will not see any of the controls.
+
+<img width="2560" height="1252" alt="Screenshot From 2025-09-05 10-47-27" src="https://github.com/user-attachments/assets/33eb8a12-7216-4566-b2e4-f052d6d56334" />
+
+In order to see the Kale controls, you must open one of the curated example notebooks from the [examples repository](https://github.com/kubeflow-kale/examples). Navigate to the Files tab and go to `kale/examples/base/`. Choose an `.ipynb` example file and open it. You should now be able to Enable the Kale panel with the toggle and see the controls.
+
+<img alt="Kale JupyterLab Extension" src="docs/imgs/Extension.png"/>
+
+With this Kale Control Panel fully operational, you should be able to start a pipeline run from JupyterLab and see it appear in the `kfp` UI.
+Make sure to `Select experiment` and choose a `Pipeline Name`, and then hit `Compile and Run`. You will see progress bars appear.
+Navigate to the `kfp` UI, refresh the page, and check that your new pipeline run has appeared here.
+
+## FAQ
 
 To build images to be used as a NotebookServer in Kubeflow, refer to the
 Dockerfile in the `docker` folder.
-
-### FAQ
 
 Head over to [FAQ](FAQ.md) to read about some known issues and some of the
 limitations imposed by the Kale data marshalling model.
@@ -101,76 +184,95 @@ limitations imposed by the Kale data marshalling model.
 
 ## Contribute
 
+Follow these steps to run the extension in developer mode, so you can see and test your changes in real time.
+Please note: this functionality is still in development, and there is not a streamlined way to observe code changes as you make them.
+
 #### Backend
 
-Make sure you have installed Kubeflow Pipelines(v2.4.0) as recommended in the official documentation [Kubeflow Pipelines Installation](https://www.kubeflow.org/docs/components/pipelines/operator-guides/installation/)
+Make sure you have installed Kubeflow Pipelines(v2.4.0) as recommended in the official documentation [Kubeflow Pipelines Installation](https://www.kubeflow.org/docs/components/pipelines/operator-guides/installation/).
 
-Clone the repository and create a conda environment:
-```bash
-git clone https://github.com/kubeflow-kale/kale.git
-cd kale
-conda create --name my_project_env python=3.10
-conda activate my_project_env
-```
-Checkout to v2.0-dev branch. Then:
+Open a new terminal window for `backend`:
 
 ```bash
-git checkout v2.0-dev
+# checkout to the backend directory
 cd backend/
-pip install -e .[dev]
 
-#start kfp locally in another terminal (optional)
+# activate the virtual environment
+conda activate my_project_env
+# OR
+source .venv/bin/activate
+
+# install the extension in dev mode
+pip install -e .[dev]
+```
+
+Open a new terminal window for `kfp`:
+
+```bash
+# start kfp locally in another terminal
 kubectl port-forward -n kubeflow svc/ml-pipeline-ui 8080:80
 
-#run cli from outside the backend directory
+# run cli from outside the backend directory
 cd ..
-python ./backend/kale/cli.py --nb ./examples/base/candies_sharing.ipynb --kfp_host http://127.0.0.1:8080/ --run_pipeline
-
-# run tests
-pytest -x -vv # TODO
+python ./backend/kale/cli.py --nb ./examples/base/candies_sharing.ipynb --kfp_host http://127.0.0.1:8080 --run_pipeline
 ```
-DSL script will be generated inside .kale of root directory and pipeline would be visible in KFP UI running at 'http://127.0.0.1:8080/'.
 
-#### Notes to consider:
+#### Notes to consider
+
 1. Component names can't be same as any other variable with same name being used in the user code.
-2. Component name can't have _ and spaces, but instead have '-'
+2. Component name can't have \_ and spaces, but instead have '-'
 3. Component names can't have capital letters and numbers after a '-'.
 4. Step names shouldn't have capital letters and no numbers after '-', eg. 'kid1' is fine, but not 'kid-1'.
-5. Step names with _ are replaced to '-' for component names and appended with '-step' in the DSL script.
+5. Step names with \_ are replaced to '-' for component names and appended with '-step' in the DSL script.
 6. Artifact variables are appended with '-artifact' in the DSL script.
-
 
 #### Labextension
 
 The JupyterLab Python package comes with its own yarn wrapper, called `jlpm`.
-While using the previously installed venv, install JupyterLab by running:
+
+Open a new terminal window to the `kale` directory and run the following:
 
 ```bash
+# activate the virtual environment
+conda activate my_project_env
+# OR
+source .venv/bin/activate
+
+# make sure you have the correct version of jupyterlab
 pip install "jupyterlab>=4.0.0"
-```
 
-You can then run the following to install the Kale extension:
-
-```bash
+# check out the labextension directory
 cd labextension/
 
-# install dependencies from package.lock
-jlpm install
 # build extension
-jlpm run build
+jlpm build
 
+# install dependencies using pyproject.toml
+pip install -e . --force-reinstall
+
+# install labextension in dev mode
+jupyter labextension develop . --overwrite
 # list installed jp extensions
-jlpm labextension list
-# install Kale extension
-jlpm labextension install .
-
-# for development:
-# build and watch
-jlpm run watch
-
-# in another shell, run JupyterLab in watch mode
-jupyter lab --no-browser --watch
+jupyter labextension list
 ```
+
+Finally, you can run Kale in developer mode (note - this is not streamlined)
+
+```bash
+# move to the base kale directory
+cd ..
+
+# open jupyterlab
+jupyter lab
+
+# To make changes and rebuild, open 2nd tab of terminal, then
+cd labextension/
+jlpm build
+```
+
+Each time you make changes to the code, you will have to
+copy paste static directory files inside kubeflow-kale-labextension/labextension folder and refresh jupyterlab
+Now, you can test the extension with the notebooks inside the examples directory.
 
 #### Git Hooks
 
