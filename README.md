@@ -240,7 +240,6 @@ conda activate my_project_env
 # OR
 source .venv/bin/activate
 
-<<<<<<< HEAD
 # make sure you have the correct version of jupyterlab
 pip install "jupyterlab>=4.0.0"
 
@@ -282,6 +281,10 @@ jlpm build
 4. Step names shouldn't have capital letters and no numbers after '-', eg. 'kid1' is fine, but not 'kid-1'.
 5. Step names with \_ are replaced to '-' for component names and appended with '-step' in the DSL script.
 6. Artifact variables are appended with '-artifact' in the DSL script.
+
+Each time you make changes to the code, you will have to
+copy paste static directory files inside kubeflow-kale-labextension/labextension folder and refresh jupyterlab
+Now, you can test the extension with the notebooks inside the examples directory.
 
 #### Git Hooks
 
