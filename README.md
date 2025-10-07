@@ -82,7 +82,7 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-Install JupyterLab into your virtual environment. Then install the Kale backend from PyPI and the JupyterLab extension.
+Install the Kale backend from PyPI, and install the JupyterLab extension, `kubeflow-kale-labextension`.
 
 ```bash
 # activate your virtual environment if you haven't already
@@ -158,7 +158,8 @@ In order to see the Kale controls, you must open one of the curated example note
 <img alt="Kale JupyterLab Extension" src="docs/imgs/Extension.png"/>
 
 With this Kale Control Panel fully operational, you should be able to start a pipeline run from JupyterLab and see it appear in the `kfp` UI.
-Make sure to `Select experiment` and choose a `Pipeline Name`, and then hit `Compile and Run`. You will see progress bars appear.
+Make sure to `Select experiment` (ie. `Kale-Pipeline-Experiment`) and choose a `Pipeline Name` (ie. `candies-sharing`), and then hit `Compile and Run`. You will see progress bars appear. (NOTE: If you do not specify `Select Experiment` and instead let it use the `Default`, you may see the error message `An RPC Error has occurred`.)
+
 Navigate to the `kfp` UI, refresh the page, and check that your new pipeline run has appeared here.
 
 ## FAQ
@@ -187,23 +188,33 @@ limitations imposed by the Kale data marshalling model.
 Follow these steps to run the extension in developer mode, so you can see and test your changes in real time.
 Please note: this functionality is still in development, and there is not a streamlined way to observe code changes as you make them.
 
-#### Backend
+#### Backend and Labextension
 
 Make sure you have installed Kubeflow Pipelines(v2.4.0) as recommended in the official documentation [Kubeflow Pipelines Installation](https://www.kubeflow.org/docs/components/pipelines/operator-guides/installation/).
 
-Open a new terminal window for `backend`:
+Open a new terminal window for `kale`:
 
 ```bash
-# checkout to the backend directory
-cd backend/
+# checkout to the backend/ directory
+cd backend
 
 # activate the virtual environment
 conda activate my_project_env
 # OR
 source .venv/bin/activate
 
+# make sure JupyterLab is installed in the venv
+pip install "jupyterlab>=4.0.0"
+
 # install the extension in dev mode
 pip install -e .[dev]
+
+# checkout to the labextension/ directory
+cd ..
+cd labextension
+
+#install the Jupyter extension
+pip install -e ".[test]"
 ```
 
 Open a new terminal window for `kfp`:
@@ -212,21 +223,12 @@ Open a new terminal window for `kfp`:
 # start kfp locally in another terminal
 kubectl port-forward -n kubeflow svc/ml-pipeline-ui 8080:80
 
-# run cli from outside the backend directory
+# run cli from outside the backend/ directory
 cd ..
 python ./backend/kale/cli.py --nb ./examples/base/candies_sharing.ipynb --kfp_host http://127.0.0.1:8080 --run_pipeline
 ```
 
-#### Notes to consider
-
-1. Component names can't be same as any other variable with same name being used in the user code.
-2. Component name can't have \_ and spaces, but instead have '-'
-3. Component names can't have capital letters and numbers after a '-'.
-4. Step names shouldn't have capital letters and no numbers after '-', eg. 'kid1' is fine, but not 'kid-1'.
-5. Step names with \_ are replaced to '-' for component names and appended with '-step' in the DSL script.
-6. Artifact variables are appended with '-artifact' in the DSL script.
-
-#### Labextension
+#### Build and Run Kale in Developer Mode
 
 The JupyterLab Python package comes with its own yarn wrapper, called `jlpm`.
 
@@ -252,11 +254,12 @@ pip install -e . --force-reinstall
 
 # install labextension in dev mode
 jupyter labextension develop . --overwrite
+
 # list installed jp extensions
 jupyter labextension list
 ```
 
-Finally, you can run Kale in developer mode (note - this is not streamlined)
+Finally, you can run Kale in developer mode
 
 ```bash
 # move to the base kale directory
@@ -266,13 +269,20 @@ cd ..
 jupyter lab
 
 # To make changes and rebuild, open 2nd tab of terminal, then
-cd labextension/
+# checkout the labextension/ directory
+cd labextension
+# rebuild the extension
 jlpm build
 ```
 
-Each time you make changes to the code, you will have to
-copy paste static directory files inside kubeflow-kale-labextension/labextension folder and refresh jupyterlab
-Now, you can test the extension with the notebooks inside the examples directory.
+#### Notes to consider
+
+1. Component names can't be same as any other variable with same name being used in the user code.
+2. Component name can't have \_ and spaces, but instead have '-'
+3. Component names can't have capital letters and numbers after a '-'.
+4. Step names shouldn't have capital letters and no numbers after '-', eg. 'kid1' is fine, but not 'kid-1'.
+5. Step names with \_ are replaced to '-' for component names and appended with '-step' in the DSL script.
+6. Artifact variables are appended with '-artifact' in the DSL script.
 
 #### Git Hooks
 
