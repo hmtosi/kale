@@ -261,10 +261,10 @@ class Compiler:
         """
         package_names = set()
         if KALE_VERSION != "0+unknown":
-            package_names.add(f"kubeflow-kale=={KALE_VERSION}")
+            package_names.add(f"dev-kubeflow-kale")
         else:
             package_names.add("kubeflow-kale")
-        package_names.add("kfp>=2.0.0")
+        package_names.add("kfp==2.14.6")
         lines = self.imports_and_functions.strip().split('\n')
 
         for line in lines:
