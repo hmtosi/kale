@@ -3,12 +3,17 @@ name: E2E Test
 on:
   workflow_dispatch:
     inputs:
+      use-local-kale:
+        required: false
+        description: "Use the local kale version"
+        default: "true"
       kale-version:
         required: false
-        description: "Version of the kale - if not provided, the latest version will be used"
+        description: "Version of the kale - if not provided, the latest version will be used if use-local-kale is false"
         default: "0.7.0"
 env:
     KALE_VERSION: ${{ inputs.kale-version }}
+    USE_LOCAL_KALE: ${{ inputs.use-local-kale }}
 
 jobs:
   test:
@@ -49,21 +54,21 @@ jobs:
       - name: Install Libraries
         run: |        
           python -m pip install --upgrade pip
-          # There was some trouble with the kale package when debugging - maybe this is not needed?
-          pip uninstall -y kale || true
-          # pip install kubeflow-kale - dependency issues when I installed it this way
-          cd backend && pip install -e .[dev]
+          if [ "$USE_LOCAL_KALE" = "true" ]; then
+            cd backend && pip install -e .[dev]
+          else
+            pip install kubeflow-kale==$KALE_VERSION
+          fi
           pip install kfp==2.14.6
           echo "KALE_PIP_INDEX_URLS=https://test.pypi.org/simple" >> $GITHUB_ENV
           
       - name: Run example notebook
-        run: |
-          python -m kale.cli --nb examples/base/candies_sharing.ipynb \
+        run: |  
+          kale --nb examples/base/candies_sharing.ipynb \
                --pipeline_name e2e-test \
                --kfp_host http://localhost:8080 \
                --run_pipeline \
                --pipeline_descr "E2E Test" 
-      # --docker_image stefanofioravanzo/kale-kfp-examples:0.1 - is this one needed?
 
       - name: Check run result
         # check the run status with python maybe not the best way - should there be python code in GHA?
