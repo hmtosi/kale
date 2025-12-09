@@ -7,14 +7,19 @@ on:
         required: false
         description: "Use the local kale version"
         default: "true"
+      kale-installation-string:
+        required: false
+        description: "Installation string for kale"
+        default: "kubeflow-kale"
       kale-version:
         required: false
-        description: "Version of the kale - if not provided, the latest version will be used if use-local-kale is false"
+        description: "Version of the kale"
         default: "0.7.0"
+      
 env:
     KALE_VERSION: ${{ inputs.kale-version }}
     USE_LOCAL_KALE: ${{ inputs.use-local-kale }}
-
+    KALE_INSTALLATION_STRING: ${{ inputs.kale-installation-string }}
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -57,9 +62,8 @@ jobs:
           if [ "$USE_LOCAL_KALE" = "true" ]; then
             cd backend && pip install -e .[dev]
           else
-            pip install kubeflow-kale==$KALE_VERSION
+            pip install $KALE_INSTALLATION_STRING==$KALE_VERSION
           fi
-          pip install kfp==2.14.6
           echo "KALE_PIP_INDEX_URLS=https://test.pypi.org/simple" >> $GITHUB_ENV
           
       - name: Run example notebook
