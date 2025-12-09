@@ -1,4 +1,5 @@
 name: E2E Test
+description: "Runs candy sharing example notebook in specified kale version or local version and checks if the run succeeded"
 
 on:
   workflow_dispatch:
@@ -9,15 +10,10 @@ on:
         default: "true"
       kale-installation-string:
         required: false
-        description: "Installation string for kale"
+        description: "Installation string for kale, only used if use-local-kale is false (e.g. dev-kubeflow-kale or kubeflow-kale==0.7.0)"
         default: "kubeflow-kale"
-      kale-version:
-        required: false
-        description: "Version of the kale"
-        default: "0.7.0"
       
 env:
-    KALE_VERSION: ${{ inputs.kale-version }}
     USE_LOCAL_KALE: ${{ inputs.use-local-kale }}
     KALE_INSTALLATION_STRING: ${{ inputs.kale-installation-string }}
 jobs:
@@ -57,12 +53,12 @@ jobs:
         with:
           python-version: '3.10'
       - name: Install Libraries
-        run: |        
+        run: |                  
           python -m pip install --upgrade pip
           if [ "$USE_LOCAL_KALE" = "true" ]; then
             cd backend && pip install -e .[dev]
           else
-            pip install $KALE_INSTALLATION_STRING==$KALE_VERSION
+            pip install $KALE_INSTALLATION_STRING
           fi
           echo "KALE_PIP_INDEX_URLS=https://test.pypi.org/simple" >> $GITHUB_ENV
           
@@ -75,8 +71,6 @@ jobs:
                --pipeline_descr "E2E Test" 
 
       - name: Check run result
-        # check the run status with python maybe not the best way - should there be python code in GHA?
-        # checks the first run
         run: |
           python3 -c "
 
