@@ -69,6 +69,9 @@ jobs:
                --kfp_host http://localhost:8080 \
                --run_pipeline \
                --pipeline_descr "E2E Test" 
+      - name: Check python DSL
+        run: |
+          cat .kale/e2e-test.kale.py
 
       - name: Check run result
         run: |
