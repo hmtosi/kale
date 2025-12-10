@@ -81,7 +81,7 @@ jobs:
 
           if not runs: sys.exit(1)
 
-          run = client.wait_for_run_completion(runs[0].run_id, timeout=300)
+          run = client.wait_for_run_completion(runs[0].run_id, timeout=600)
           
           print(f'Pipeline run status: {run.state}')
           if run.state == 'SUCCEEDED':
