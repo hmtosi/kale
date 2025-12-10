@@ -66,12 +66,22 @@ jobs:
         run: |  
           kale --nb examples/base/candies_sharing.ipynb \
                --pipeline_name e2e-test \
-               --kfp_host http://localhost:8080 \
-               --run_pipeline \
                --pipeline_descr "E2E Test" 
-      - name: Check python DSL
-        run: |
-          cat .kale/e2e-test.kale.py
+
+          sed -i "s/'kubeflow-kale'/'dev-kubeflow-kale'/g" .kale/e2e-test.kale.py
+          
+          python3 .kale/e2e-test.kale.py
+
+          python3 -c "
+          import kfp
+          client = kfp.Client(host='http://localhost:8080')
+          client.create_run_from_pipeline_package(
+              pipeline_file='auto_generated_pipeline.yaml',
+              arguments={},
+              run_name='e2e-test-run',
+              experiment_name='e2e-test'
+          )
+          "
 
       - name: Check run result
         run: |
