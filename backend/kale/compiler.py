@@ -263,7 +263,7 @@ class Compiler:
         """
         package_names = set()
         if KALE_VERSION != "0+unknown":
-            package_names.add(f"kubeflow-kale=={KALE_VERSION}")
+            package_names.add("dev-kubeflow-kale")
         else:
             package_names.add("kubeflow-kale")
         package_names.add("kfp>=2.0.0")
