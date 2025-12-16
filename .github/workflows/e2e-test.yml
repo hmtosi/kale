@@ -3,6 +3,10 @@ description: "Runs candy sharing example notebook in specified kale version or l
 
 on:
   workflow_dispatch:
+    # temporary trigger for force the workflow to be registered
+    push:
+      branches:
+        - local-e2e-test
     inputs:
       use-local-kale:
         required: false
