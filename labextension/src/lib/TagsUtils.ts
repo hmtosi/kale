@@ -19,9 +19,15 @@ import { KALE_TAG_PREFIXES } from '../widgets/cell-metadata/constants';
 
 const IMAGE_TAG = 'image:';
 const CACHE_TAG = 'cache:';
+const SECRET_TAG = 'secret:';
 const CACHE_ENABLED_VALUE = 'enabled';
 const REPORT_TAG = 'report:';
 const REPORT_ENABLED_VALUE = 'enabled';
+
+export interface ISecretRef {
+  secretName: string;
+  secretKey: string;
+}
 
 const NOTEBOOK_PREFIX = 'notebook:';
 
@@ -29,6 +35,7 @@ interface IKaleCellTags {
   stepName: string;
   prevStepNames: string[];
   limits?: { [id: string]: string };
+  secrets?: { [envName: string]: ISecretRef };
   baseImage?: string;
   enableCaching?: boolean;
   // set when the cell is a `notebook:` reference (stepName = 'notebook:<name>')
@@ -136,6 +143,15 @@ export default class TagsUtils {
           limits[values[1]] = values[2];
         });
 
+      const secrets: { [envName: string]: ISecretRef } = {};
+      tags
+        .filter(v => v.startsWith(SECRET_TAG))
+        .map(s => {
+          const values = s.split(':');
+          // secret:<secretName>:<secretKey>:<envName>
+          secrets[values[3]] = { secretName: values[1], secretKey: values[2] };
+        });
+
       // Parse base image tag
       let baseImage: string | undefined;
       const imageTag = tags.find(v => v.startsWith(IMAGE_TAG));
@@ -175,6 +191,7 @@ export default class TagsUtils {
         stepName: stepName,
         prevStepNames: prevs,
         limits: limits,
+        secrets: secrets,
         baseImage: baseImage,
         enableCaching: enableCaching,
         notebookPath: notebookPath,
@@ -207,11 +224,23 @@ export default class TagsUtils {
     }
     const stepDependencies = metadata.prevStepNames || [];
     const limits = metadata.limits || {};
+    const secrets = metadata.secrets || {};
     const baseImage = metadata.baseImage;
     const tags = [nb]
       .concat(stepDependencies.map(v => 'prev:' + v))
       .concat(
         Object.keys(limits).map(lim => 'limit:' + lim + ':' + limits[lim]),
+      )
+      .concat(
+        Object.keys(secrets).map(
+          env =>
+            SECRET_TAG +
+            secrets[env].secretName +
+            ':' +
+            secrets[env].secretKey +
+            ':' +
+            env,
+        ),
       );
 
     // Add base image tag if specified

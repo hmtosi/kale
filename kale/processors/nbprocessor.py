@@ -27,7 +27,7 @@ import nbformat as nb
 import networkx as nx
 
 from kale.common import astutils, flakeutils, graphutils, kfutils, utils
-from kale.config import Field
+from kale.config import Field, validators
 from kale.pipeline import Pipeline, PipelineConfig
 from kale.processors.constants import (
     ANNOTATIONS,
@@ -54,6 +54,8 @@ from kale.processors.constants import (
     PIPELINE_PARAMETERS_TAG,
     PREV_STEPS,
     REPORT_ENABLED,
+    SECRET_CONF_TYPE,
+    SECRETS,
     STEP_NAMES,
     STEPS_DEFAULTS,
     STEPS_DEFAULTS_LANGUAGE,
@@ -86,6 +88,17 @@ def get_limit_from_tag(tag_parts):
     Returns (tuple): key (limit name), values
     """
     return tag_parts.pop(0), tag_parts.pop(0)
+
+
+def get_secret_from_tag(tag_parts):
+    """Get the secret name, secret key, and env var name from a secret tag.
+
+    Args:
+        tag_parts: secret notebook tag, as [secret_name, secret_key, env_name]
+
+    Returns (tuple): secret name, secret key, env var name
+    """
+    return tag_parts.pop(0), tag_parts.pop(0), tag_parts.pop(0)
 
 
 class NotebookConfig(PipelineConfig):
@@ -140,6 +153,15 @@ class NotebookConfig(PipelineConfig):
                     result[LIMITS] = {}
                 key, value = get_limit_from_tag(parts)
                 result[LIMITS][key] = value
+
+            if conf_type == SECRET_CONF_TYPE:
+                if SECRETS not in result:
+                    result[SECRETS] = {}
+                secret_name, secret_key, env_name = get_secret_from_tag(parts)
+                result[SECRETS][env_name] = {
+                    validators.SECRET_NAME_KEY: secret_name,
+                    validators.SECRET_KEY_KEY: secret_key,
+                }
 
             if conf_type == "image":
                 # Image tag value is the rest after 'image:'
@@ -401,6 +423,7 @@ class NotebookProcessor:
                         ins=[],
                         outs=[],
                         limits=tags.get(LIMITS, {}),
+                        secrets=tags.get(SECRETS, {}),
                         labels=tags.get(LABELS, {}),
                         annotations=tags.get(ANNOTATIONS, {}),
                         base_image=tags.get(BASE_IMAGE, ""),
@@ -633,6 +656,7 @@ class NotebookProcessor:
         cell_annotations = {}
         cell_labels = {}
         cell_limits = {}
+        cell_secrets = {}
         cell_base_image = None
         cell_enable_caching = None
         cell_generate_html_report = None
@@ -686,6 +710,13 @@ class NotebookProcessor:
             if tag_name == "limit":
                 key, value = get_limit_from_tag(tag_parts)
                 cell_limits.update({key: value})
+
+            if tag_name == SECRET_CONF_TYPE:
+                secret_name, secret_key, env_name = get_secret_from_tag(tag_parts)
+                cell_secrets[env_name] = {
+                    validators.SECRET_NAME_KEY: secret_name,
+                    validators.SECRET_KEY_KEY: secret_key,
+                }
 
             if tag_name == "image":
                 # Image value is the rest after 'image:'
@@ -744,6 +775,14 @@ class NotebookProcessor:
                     " cell that does not declare a step name."
                 )
             parsed_tags[LIMITS] = cell_limits
+
+        if cell_secrets:
+            if missing_step_names:
+                raise ValueError(
+                    "A cell can not provide Secret env vars in a"
+                    " cell that does not declare a step name."
+                )
+            parsed_tags[SECRETS] = cell_secrets
 
         if cell_base_image:
             if missing_step_names:

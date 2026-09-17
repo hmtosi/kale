@@ -127,6 +127,7 @@ export const InlineCellsMetadata: React.FC<IProps> = ({
         stepName: activeEditorData.stepName || '',
         stepDependencies: activeEditorData.stepDependencies || [],
         limits: activeEditorData.limits || {},
+        secrets: activeEditorData.secrets || {},
         baseImage: activeEditorData.baseImage,
         enableCaching: activeEditorData.enableCaching,
         notebookPath: activeEditorData.notebookPath,
@@ -137,6 +138,7 @@ export const InlineCellsMetadata: React.FC<IProps> = ({
         stepName: '',
         stepDependencies: [],
         limits: {},
+        secrets: {},
         baseImage: undefined,
         enableCaching: undefined,
         notebookPath: undefined,
@@ -149,6 +151,7 @@ export const InlineCellsMetadata: React.FC<IProps> = ({
       stepName={editorProps.stepName}
       stepDependencies={editorProps.stepDependencies}
       limits={editorProps.limits}
+      secrets={editorProps.secrets}
       baseImage={editorProps.baseImage}
       enableCaching={editorProps.enableCaching}
       notebookPath={editorProps.notebookPath}

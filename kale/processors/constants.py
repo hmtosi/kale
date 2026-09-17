@@ -22,6 +22,14 @@ the keys of the parsed-tag dictionary shared between
 templates / type maps.
 """
 
+from kale.config import validators
+
+
+def _regex_body(pattern: str) -> str:
+    """Strip the `^`/`$` anchors so a validator regex can be nested inside a larger one."""
+    return pattern.removeprefix("^").removesuffix("$")
+
+
 # --------------------------------------------------------------------------
 # Notebook JSON keys and the cell tag language
 # --------------------------------------------------------------------------
@@ -47,6 +55,18 @@ LABEL_TAG = rf"^label:{K8S_ANNOTATION_KEY}:(.*)$"
 # Limits map to K8s limits, like CPU, Mem, GPU, ...
 # E.g.: limit:nvidia.com/gpu:2
 LIMITS_TAG = r"^limit:([_a-z-\.\/]+):([_a-zA-Z0-9\.]+)$"
+# Secrets map a K8s Secret's key to an env var, injected via
+# kfp.kubernetes.use_secret_as_env. Built from the same validators applied to
+# StepConfig.secrets (see K8sSecretsValidator) so the two can't drift apart.
+# E.g.: secret:db-credentials:password:DB_PASSWORD
+# The tag prefix, i.e. the first `:`-separated part of a `secret:...` tag.
+SECRET_CONF_TYPE = "secret"
+SECRET_TAG = (
+    r"^secret:"
+    rf"({_regex_body(validators.K8sSecretNameValidator.regex)}):"
+    rf"({_regex_body(validators.K8sSecretKeyValidator.regex)}):"
+    rf"({_regex_body(validators.EnvVarNameValidator.regex)})$"
+)
 # Image tag for per-step Base image selection
 # E.g.: image:python:3.11-slim
 IMAGE_TAG = r"^image:(.+)$"
@@ -73,12 +93,21 @@ TAGS_LANGUAGE = [
     ANNOTATION_TAG,
     LABEL_TAG,
     LIMITS_TAG,
+    SECRET_TAG,
     IMAGE_TAG,
     CACHE_TAG,
     REPORT_TAG,
 ]
 # These tags are applied to every step of the pipeline
-STEPS_DEFAULTS_LANGUAGE = [ANNOTATION_TAG, LABEL_TAG, LIMITS_TAG, IMAGE_TAG, CACHE_TAG, REPORT_TAG]
+STEPS_DEFAULTS_LANGUAGE = [
+    ANNOTATION_TAG,
+    LABEL_TAG,
+    LIMITS_TAG,
+    SECRET_TAG,
+    IMAGE_TAG,
+    CACHE_TAG,
+    REPORT_TAG,
+]
 
 
 METRICS_TEMPLATE = """\
@@ -125,6 +154,7 @@ NOTEBOOK_PATH = "notebook_path"
 ANNOTATIONS = "annotations"
 LABELS = "labels"
 LIMITS = "limits"
+SECRETS = "secrets"
 BASE_IMAGE = "base_image"
 ENABLE_CACHING = "enable_caching"
 GENERATE_HTML_REPORT = "generate_html_report"

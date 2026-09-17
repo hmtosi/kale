@@ -14,7 +14,7 @@
 
 import { useCallback, useContext } from 'react';
 import { NotebookPanel } from '@jupyterlab/notebook';
-import TagsUtils from '../../../lib/TagsUtils';
+import TagsUtils, { ISecretRef } from '../../../lib/TagsUtils';
 import { CellMetadataContext } from '../../../lib/CellMetadataContext';
 import { RESERVED_CELL_NAMES, NOTEBOOK_REF_CELL_HINT } from '../constants';
 import CellUtils from '../../../lib/CellUtils';
@@ -24,6 +24,7 @@ interface IUseCellTagsParams {
   stepName?: string;
   stepDependencies: string[];
   limits?: { [id: string]: string };
+  secrets?: { [envName: string]: ISecretRef };
   baseImage?: string;
   enableCaching?: boolean;
   notebookPath?: string;
@@ -58,6 +59,7 @@ export function useUpdateCellTags({
   stepName,
   stepDependencies,
   limits,
+  secrets,
   baseImage,
   enableCaching,
   notebookPath,
@@ -72,6 +74,7 @@ export function useUpdateCellTags({
       TagsUtils.setKaleCellTags(notebook, activeCellIndex, {
         prevStepNames: stepDependencies,
         limits: limits || {},
+        secrets: secrets || {},
         baseImage,
         enableCaching,
         notebookPath,
@@ -85,6 +88,7 @@ export function useUpdateCellTags({
       stepName,
       stepDependencies,
       limits,
+      secrets,
       baseImage,
       enableCaching,
       notebookPath,
@@ -136,6 +140,7 @@ export function useUpdateCellTags({
       TagsUtils.setKaleCellTags(notebook, activeCellIndex, {
         stepName: stepName || '',
         limits: limits || {},
+        secrets: secrets || {},
         baseImage,
         enableCaching,
         generateHtmlReport,
@@ -147,6 +152,7 @@ export function useUpdateCellTags({
       activeCellIndex,
       stepName,
       limits,
+      secrets,
       baseImage,
       enableCaching,
       generateHtmlReport,
@@ -178,6 +184,32 @@ export function useUpdateCellTags({
         stepName: stepName || '',
         prevStepNames: stepDependencies,
         limits: newLimits,
+        secrets: secrets || {},
+        baseImage,
+        enableCaching,
+        generateHtmlReport,
+      });
+    },
+    [
+      notebook,
+      activeCellIndex,
+      stepName,
+      stepDependencies,
+      limits,
+      secrets,
+      baseImage,
+      enableCaching,
+      generateHtmlReport,
+    ],
+  );
+
+  const updateSecrets = useCallback(
+    (newSecrets: { [envName: string]: ISecretRef }) => {
+      TagsUtils.setKaleCellTags(notebook, activeCellIndex, {
+        stepName: stepName || '',
+        prevStepNames: stepDependencies,
+        limits: limits || {},
+        secrets: newSecrets,
         baseImage,
         enableCaching,
         generateHtmlReport,
@@ -201,6 +233,7 @@ export function useUpdateCellTags({
         stepName: stepName || '',
         prevStepNames: stepDependencies,
         limits: limits || {},
+        secrets: secrets || {},
         baseImage: value || undefined,
         enableCaching,
         generateHtmlReport,
@@ -212,6 +245,7 @@ export function useUpdateCellTags({
       stepName,
       stepDependencies,
       limits,
+      secrets,
       enableCaching,
       generateHtmlReport,
     ],
@@ -223,6 +257,7 @@ export function useUpdateCellTags({
         stepName: stepName || '',
         prevStepNames: stepDependencies,
         limits: limits || {},
+        secrets: secrets || {},
         baseImage,
         enableCaching: value,
         generateHtmlReport,
@@ -234,6 +269,7 @@ export function useUpdateCellTags({
       stepName,
       stepDependencies,
       limits,
+      secrets,
       baseImage,
       generateHtmlReport,
     ],
@@ -245,6 +281,7 @@ export function useUpdateCellTags({
         stepName: stepName || '',
         prevStepNames: stepDependencies,
         limits: limits || {},
+        secrets: secrets || {},
         baseImage,
         enableCaching,
         generateHtmlReport: value,
@@ -256,10 +293,12 @@ export function useUpdateCellTags({
       stepName,
       stepDependencies,
       limits,
+      secrets,
       baseImage,
       enableCaching,
     ],
   );
+
   const clearCellMetadata = useCallback(() => {
     TagsUtils.removeAllKaleTags(notebook, activeCellIndex);
   }, [notebook, activeCellIndex]);
@@ -270,6 +309,7 @@ export function useUpdateCellTags({
     updateNotebookPath,
     updateDependencies,
     updateLimits,
+    updateSecrets,
     updateBaseImage,
     updateCaching,
     updateHtmlReport,
