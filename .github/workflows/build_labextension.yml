@@ -38,6 +38,9 @@ jobs:
       - name: Lint labextension
         run: make lint-labextension
 
+      - name: Test labextension
+        run: make test-labextension
+
   build:
     runs-on: ubuntu-latest
     steps:
