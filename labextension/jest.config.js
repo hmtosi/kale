@@ -37,7 +37,6 @@ module.exports = {
     '!src/**/.ipynb_checkpoints/*',
   ],
   coverageReporters: ['lcov', 'text'],
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testRegex: 'src/.*/.*.spec.ts[x]?$',
   testPathIgnorePatterns: ['/node_modules/', '/ui-tests/'],
   transformIgnorePatterns: [`/node_modules/(?!${esModules}).+`],

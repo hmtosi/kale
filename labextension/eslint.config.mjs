@@ -28,7 +28,6 @@ export default [
       '**/ui-tests/**',
       '**/babel.config.js',
       '**/jest.config.js',
-      '**/jest.setup.js',
       '**/labextension/**',
       '.prettierrc.js',
       '.ipynb_checkpoints/**',
